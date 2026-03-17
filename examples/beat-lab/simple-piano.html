@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Rainbow Piano</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      background: #1a1a2e;
+    }
+    h1 { text-align: center; color: #fff; font-size: 32px; padding: 16px 0 8px; }
+    #piano {
+      display: flex;
+      width: 100%;
+      height: calc(100% - 80px);
+      padding: 8px;
+      gap: 4px;
+    }
+    .key {
+      flex: 1;
+      border: none;
+      border-radius: 0 0 12px 12px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 20px;
+      transition: filter 0.05s;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      min-width: 44px;
+    }
+    .key:active, .key.active {
+      filter: brightness(1.4);
+      transform: scaleY(0.97);
+      transform-origin: top;
+    }
+    .note-label { font-size: 16px; opacity: 0.8; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>🎹 Rainbow Piano</h1>
+  <div id="piano"></div>
+
+  <script>
+    let audioCtx;
+    function ac() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+
+    function playNote(freq) {
+      const c = ac();
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      const now = c.currentTime;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.35, now + 0.01);
+      g.gain.linearRampToValueAtTime(0.25, now + 0.1);
+      g.gain.linearRampToValueAtTime(0, now + 0.8);
+      o.connect(g); g.connect(c.destination);
+      o.start(now); o.stop(now + 0.8);
+    }
+
+    const notes = [
+      { name: 'C', freq: 261.63, color: '#FF0000' },
+      { name: 'D', freq: 293.66, color: '#FF7700' },
+      { name: 'E', freq: 329.63, color: '#FFDD00' },
+      { name: 'F', freq: 349.23, color: '#00CC00' },
+      { name: 'G', freq: 392.00, color: '#0088FF' },
+      { name: 'A', freq: 440.00, color: '#4400CC' },
+      { name: 'B', freq: 493.88, color: '#8800FF' },
+      { name: 'C', freq: 523.25, color: '#FF0066' },
+    ];
+
+    const piano = document.getElementById('piano');
+
+    notes.forEach(n => {
+      const key = document.createElement('button');
+      key.className = 'key';
+      key.style.background = n.color;
+      key.innerHTML = `<span>${n.name}</span>`;
+
+      key.addEventListener('touchstart', e => {
+        e.preventDefault();
+        key.classList.add('active');
+        playNote(n.freq);
+      }, { passive: false });
+
+      key.addEventListener('touchend', () => key.classList.remove('active'));
+      key.addEventListener('touchcancel', () => key.classList.remove('active'));
+
+      // Mouse fallback
+      key.addEventListener('mousedown', () => { key.classList.add('active'); playNote(n.freq); });
+      key.addEventListener('mouseup', () => key.classList.remove('active'));
+      key.addEventListener('mouseleave', () => key.classList.remove('active'));
+
+      piano.appendChild(key);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Dino Jumper</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      background: #87CEEB;
+    }
+    canvas { display: block; }
+    #score { position: fixed; top: 12px; right: 16px; font-size: 28px; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); z-index: 10; }
+    #start-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 20; }
+    #start-screen h1 { font-size: 48px; color: #fff; margin-bottom: 8px; }
+    #start-screen p { font-size: 20px; color: #ccc; margin-bottom: 24px; }
+    .play-btn { font-size: 28px; padding: 16px 48px; border: none; border-radius: 16px; background: #4CAF50; color: #fff; cursor: pointer; }
+    .play-btn:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+  <div id="score">0</div>
+  <canvas id="c"></canvas>
+  <div id="start-screen">
+    <h1>🦕 Dino Jumper</h1>
+    <p>Tap to jump over the rocks!</p>
+    <button class="play-btn" id="play-btn">▶️ Play!</button>
+  </div>
+
+  <script>
+    let audioCtx;
+    function ac() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+    function beep(f, d = 0.1, t = 'sine') {
+      const c = ac(), o = c.createOscillator(), g = c.createGain();
+      o.type = t; o.frequency.value = f;
+      g.gain.setValueAtTime(0.2, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + d);
+      o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + d);
+    }
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let W, H, ground;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      ground = H * 0.75;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Dino
+    const dino = { x: 80, y: ground, w: 48, h: 48, vy: 0, jumping: false };
+    const GRAVITY = 0.6;
+    const JUMP_FORCE = -14;
+
+    // Rocks
+    let rocks = [];
+    let rockTimer = 0;
+    const ROCK_INTERVAL = 90;
+    const ROCK_SPEED = 4;
+
+    // Game
+    let score = 0;
+    let running = false;
+    let gameOver = false;
+
+    function jump() {
+      if (!dino.jumping) {
+        dino.vy = JUMP_FORCE;
+        dino.jumping = true;
+        beep(523, 0.1);
+      }
+    }
+
+    function spawnRock() {
+      rocks.push({ x: W + 20, y: ground, w: 32, h: 28 + Math.random() * 20 });
+    }
+
+    function update() {
+      // Dino physics
+      dino.vy += GRAVITY;
+      dino.y += dino.vy;
+      if (dino.y >= ground) {
+        dino.y = ground;
+        dino.vy = 0;
+        dino.jumping = false;
+      }
+
+      // Rocks
+      rockTimer++;
+      if (rockTimer >= ROCK_INTERVAL) {
+        spawnRock();
+        rockTimer = 0;
+      }
+
+      for (let i = rocks.length - 1; i >= 0; i--) {
+        rocks[i].x -= ROCK_SPEED;
+        // Score
+        if (!rocks[i].scored && rocks[i].x + rocks[i].w < dino.x) {
+          rocks[i].scored = true;
+          score++;
+          document.getElementById('score').textContent = score;
+          beep(880, 0.05);
+        }
+        // Remove offscreen
+        if (rocks[i].x < -50) rocks.splice(i, 1);
+      }
+
+      // Collision
+      for (const r of rocks) {
+        if (dino.x + 20 > r.x && dino.x < r.x + r.w &&
+            dino.y > r.y - r.h) {
+          endGame();
+          return;
+        }
+      }
+    }
+
+    function draw() {
+      // Sky
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(0, 0, W, H);
+
+      // Ground
+      ctx.fillStyle = '#8B7355';
+      ctx.fillRect(0, ground, W, H - ground);
+      ctx.fillStyle = '#90EE90';
+      ctx.fillRect(0, ground - 4, W, 8);
+
+      // Clouds
+      ctx.font = '36px serif';
+      ctx.fillText('☁️', W * 0.2, H * 0.2);
+      ctx.fillText('☁️', W * 0.6, H * 0.15);
+      ctx.fillText('☁️', W * 0.85, H * 0.25);
+
+      // Dino
+      ctx.font = '48px serif';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('🦕', dino.x - 20, dino.y + 4);
+
+      // Rocks
+      ctx.font = '36px serif';
+      for (const r of rocks) {
+        ctx.fillText('🪨', r.x - 8, r.y + 4);
+      }
+    }
+
+    function endGame() {
+      running = false;
+      gameOver = true;
+      beep(200, 0.3, 'square');
+      const ss = document.getElementById('start-screen');
+      ss.style.display = 'flex';
+      ss.querySelector('h1').textContent = '💥 Game Over!';
+      ss.querySelector('p').textContent = `Score: ${score} — Tap to play again!`;
+    }
+
+    function startGame() {
+      document.getElementById('start-screen').style.display = 'none';
+      score = 0;
+      document.getElementById('score').textContent = '0';
+      rocks = [];
+      rockTimer = 0;
+      dino.y = ground;
+      dino.vy = 0;
+      dino.jumping = false;
+      running = true;
+      gameOver = false;
+      loop();
+    }
+
+    function loop() {
+      if (!running) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Input
+    document.addEventListener('touchstart', e => { e.preventDefault(); if (running) jump(); }, { passive: false });
+    document.addEventListener('keydown', e => { if (e.code === 'Space' && running) jump(); });
+    document.getElementById('play-btn').addEventListener('touchstart', e => { e.stopPropagation(); startGame(); });
+    document.getElementById('play-btn').addEventListener('click', e => { e.stopPropagation(); startGame(); });
+  </script>
+</body>
+</html>

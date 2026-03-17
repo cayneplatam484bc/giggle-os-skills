@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Giggle Story</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #story-container {
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: background-color 0.5s ease;
+      background: #fff8e1;
+    }
+
+    #scene-emoji {
+      font-size: 72px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    #story-text {
+      font-size: 24px;
+      line-height: 1.6;
+      text-align: center;
+      max-width: 600px;
+      margin-bottom: 32px;
+      color: #333;
+    }
+
+    #choices {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .choice-btn {
+      font-size: 22px;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      cursor: pointer;
+      min-height: 56px;
+      transition: transform 0.1s;
+    }
+
+    .choice-btn:active { transform: scale(0.95); }
+    .choice-btn:nth-child(1) { background: #4CAF50; }
+    .choice-btn:nth-child(2) { background: #2196F3; }
+    .choice-btn:nth-child(3) { background: #FF9800; }
+  </style>
+</head>
+<body>
+  <div id="story-container">
+    <div id="scene-emoji"></div>
+    <div id="story-text"></div>
+    <div id="choices"></div>
+  </div>
+
+  <script>
+    // --- Story Data ---
+    const scenes = {
+      start: {
+        emoji: '🏰',
+        text: 'Once upon a time...',
+        bg: '#fff8e1',
+        choices: [
+          { text: '🚀 Go on an adventure!', next: 'scene2' },
+          { text: '🌙 Explore the night', next: 'scene3' }
+        ]
+      },
+      // TODO: Add more scenes
+      end: {
+        emoji: '🌟',
+        text: 'The End! What a wonderful adventure!',
+        bg: '#e8f5e9',
+        choices: [
+          { text: '🔄 Play Again', next: 'start' }
+        ]
+      }
+    };
+
+    // --- Scene Renderer ---
+    function showScene(sceneId) {
+      const scene = scenes[sceneId];
+      if (!scene) return;
+
+      const container = document.getElementById('story-container');
+      container.style.backgroundColor = scene.bg || '#fff8e1';
+
+      document.getElementById('scene-emoji').textContent = scene.emoji;
+      document.getElementById('story-text').textContent = scene.text;
+
+      const choicesDiv = document.getElementById('choices');
+      choicesDiv.innerHTML = '';
+
+      scene.choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice.text;
+        btn.addEventListener('touchstart', () => showScene(choice.next));
+        btn.addEventListener('click', () => showScene(choice.next));
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    // Start
+    showScene('start');
+  </script>
+</body>
+</html>

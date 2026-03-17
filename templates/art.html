@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Giggle Art</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      background: #f5f5f5;
+    }
+
+    #art-canvas {
+      display: block;
+      background: #fff;
+      cursor: crosshair;
+    }
+
+    #toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.95);
+      border-top: 2px solid #ddd;
+      overflow-x: auto;
+      z-index: 10;
+    }
+
+    .color-swatch {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .color-swatch.active {
+      border-color: #333;
+      transform: scale(1.15);
+    }
+
+    .size-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 2px solid #999;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .size-btn.active {
+      border-color: #333;
+      background: #eee;
+    }
+
+    .size-dot {
+      border-radius: 50%;
+      background: #333;
+    }
+
+    .tool-btn {
+      min-width: 44px; height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: #eee;
+      font-size: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0 12px;
+    }
+
+    .tool-btn:active { background: #ddd; }
+
+    .separator {
+      width: 2px; height: 32px;
+      background: #ddd;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="art-canvas"></canvas>
+
+  <div id="toolbar">
+    <!-- Colors -->
+    <div class="separator"></div>
+    <!-- Sizes -->
+    <div class="separator"></div>
+    <!-- Tools: undo, clear -->
+  </div>
+
+  <script>
+    const canvas = document.getElementById('art-canvas');
+    const ctx = canvas.getContext('2d');
+    const toolbar = document.getElementById('toolbar');
+    const TOOLBAR_H = 60;
+
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight - TOOLBAR_H;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // --- State ---
+    let currentColor = '#333333';
+    let currentSize = 8;
+    let drawing = false;
+    let lastX, lastY;
+    let undoStack = [];
+
+    // --- Undo ---
+    function saveState() {
+      if (undoStack.length > 20) undoStack.shift();
+      undoStack.push(canvas.toDataURL());
+    }
+
+    function undo() {
+      if (undoStack.length === 0) return;
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = undoStack.pop();
+    }
+
+    // --- Drawing ---
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      saveState();
+      drawing = true;
+      const t = e.touches[0];
+      lastX = t.clientX;
+      lastY = t.clientY;
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, currentSize / 2, 0, Math.PI * 2);
+      ctx.fillStyle = currentColor;
+      ctx.fill();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (!drawing) return;
+      const t = e.touches[0];
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(t.clientX, t.clientY);
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = currentSize;
+      ctx.stroke();
+      lastX = t.clientX;
+      lastY = t.clientY;
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => { drawing = false; });
+
+    // --- Color Palette ---
+    const COLORS = [
+      '#000000', '#FF0000', '#FF7700', '#FFDD00',
+      '#00CC00', '#0088FF', '#8800FF', '#FF69B4',
+      '#8B4513', '#FFFFFF'
+    ];
+
+    function buildToolbar() {
+      const tb = document.getElementById('toolbar');
+      tb.innerHTML = '';
+
+      // Colors
+      COLORS.forEach(c => {
+        const s = document.createElement('button');
+        s.className = 'color-swatch' + (c === currentColor ? ' active' : '');
+        s.style.background = c;
+        if (c === '#FFFFFF') s.style.border = '3px solid #ccc';
+        s.addEventListener('touchstart', e => {
+          e.preventDefault();
+          currentColor = c;
+          buildToolbar();
+        }, { passive: false });
+        tb.appendChild(s);
+      });
+
+      // Separator
+      tb.appendChild(Object.assign(document.createElement('div'), { className: 'separator' }));
+
+      // Sizes
+      [4, 8, 16, 24, 36].forEach(size => {
+        const btn = document.createElement('button');
+        btn.className = 'size-btn' + (size === currentSize ? ' active' : '');
+        const dot = document.createElement('div');
+        dot.className = 'size-dot';
+        const d = Math.min(size, 28);
+        dot.style.width = d + 'px';
+        dot.style.height = d + 'px';
+        btn.appendChild(dot);
+        btn.addEventListener('touchstart', e => {
+          e.preventDefault();
+          currentSize = size;
+          buildToolbar();
+        }, { passive: false });
+        tb.appendChild(btn);
+      });
+
+      // Separator
+      tb.appendChild(Object.assign(document.createElement('div'), { className: 'separator' }));
+
+      // Undo
+      const undoBtn = document.createElement('button');
+      undoBtn.className = 'tool-btn';
+      undoBtn.textContent = '↩️';
+      undoBtn.addEventListener('touchstart', e => { e.preventDefault(); undo(); }, { passive: false });
+      tb.appendChild(undoBtn);
+
+      // Clear
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'tool-btn';
+      clearBtn.textContent = '🗑️';
+      clearBtn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        saveState();
+        ctx.clearRect(0, 0, W, H);
+      }, { passive: false });
+      tb.appendChild(clearBtn);
+    }
+
+    buildToolbar();
+    // Fill white background
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+  </script>
+</body>
+</html>
