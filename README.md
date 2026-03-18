@@ -42,7 +42,7 @@ AI:  → generates a complete working piano app in HTML
 ```
 
 Each "skill" is a structured `skill.md` file that instructs the LLM on:
-- What kind of app to build (game, story, music, art, science, tool)
+- What kind of app to build (game, story, music, art, science, tool, BNB)
 - What patterns and techniques to use
 - How to adapt content for the child's age
 - What constraints to follow (no external assets, touch-first, etc.)
@@ -122,7 +122,7 @@ Turns a story idea into an interactive illustrated narrative.
 
 ---
 
-### 🎵 Music Studio — Beat Lab
+### 🎵 Music Studio — Beat Lab 
 **Skill file:** [skills/beat-lab/skill.md](skills/beat-lab/skill.md)
 
 Turns a music idea into a playable instrument or beat maker.
