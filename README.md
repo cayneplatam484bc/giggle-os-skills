@@ -1,8 +1,49 @@
 # Giggle Skills
 
-> The AI skill set powering **Giggle OS** — a creative tablet OS for kids ages 5–10, running on Raspberry Pi 5 with a 7" touchscreen.
+AI skill definitions and builder docs for **Giggle OS** — a creative OS for kids ages 5–10 that turns ideas into interactive apps, with marketplace payments designed to settle on **BNB Smart Chain (BSC)**.
 
-A child describes what they want to build — in their own words, out loud or typed. The **Imagination Engine** (an AI skill loaded into any LLM) reads that description and generates a complete, working, interactive HTML app in seconds. No installs. No app store. Just imagination.
+Giggle OS lets a child describe what they want to make — a game, story, music toy, art tool, science sim, or mini utility — and the **Imagination Engine** turns that idea into a complete interactive HTML app.
+
+---
+
+## Technology Stack
+
+- **Blockchain**: BNB Smart Chain (BSC) + EVM-compatible chains
+- **Smart Contracts**: Not required for the core skill repo; payment and marketplace integrations are designed for EVM-compatible settlement flows
+- **Frontend**: Giggle OS UI, HTML5, CSS, JavaScript, Chromium/WebView runtime
+- **AI Layer**: OpenClaw-compatible skill files, system prompts, LLM integrations
+- **Development**: Markdown skill definitions, Raspberry Pi tooling, browser-based rendering, optional EVM integrations for marketplace/payment flows
+
+---
+
+## Supported Networks
+
+- **BNB Smart Chain Mainnet** (Chain ID: 56)
+- **BNB Smart Chain Testnet** (Chain ID: 97)
+- **Other EVM-compatible chains** (architecture-compatible, depending on payment integration)
+
+---
+
+## Features
+
+- AI-native creation flow for kids: idea in, interactive app out
+- Six creative studios: Games, Stories, Music, Art, Science, and Tinker
+- Single-file self-contained HTML output with no external dependencies
+- Touch-first design for Raspberry Pi touchscreen devices
+- Age-adaptive generation for ages 5–10
+- Safety-aware skill rules and sandboxed output model
+- Marketplace/payment layer designed for low-friction settlement on **BNB Chain**
+- Open builder docs, skill files, and examples for contributors and educators
+
+---
+
+## What Is This?
+
+**Giggle Skills** is the open skill layer behind **Giggle OS**.
+
+It is a collection of structured `skill.md` files that can be loaded into OpenClaw or other LLM environments as system prompts. These skills guide the model to generate complete, working, kid-safe interactive HTML apps from simple natural-language requests.
+
+Instead of downloading apps, kids describe what they want and the system builds it.
 
 ---
 
